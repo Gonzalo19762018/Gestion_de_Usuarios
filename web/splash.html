@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Flujo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;400;500&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black:   #080A0F;
+    --surface: #0E1117;
+    --border:  #1C2030;
+    --gold:    #C9A84C;
+    --gold2:   #F0D080;
+    --white:   #F4F4F0;
+    --text2:   #8A8F9E;
+    --green:   #22C55E;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── BACKGROUND ── */
+  .bg {
+    position: fixed; inset: 0;
+    background: var(--black);
+    z-index: 0;
+  }
+
+  .bg-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    animation: gridFade 3s ease forwards;
+    opacity: 0;
+  }
+
+  .bg-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -60%);
+    animation: glowPulse 4s ease-in-out infinite;
+  }
+
+  .bg-glow2 {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 70%);
+    bottom: 20%; right: 10%;
+    animation: glowPulse 6s ease-in-out infinite reverse;
+  }
+
+  .bg-lines {
+    position: absolute; inset: 0;
+    overflow: hidden;
+  }
+
+  .bg-lines::before, .bg-lines::after {
+    content: '';
+    position: absolute;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(201,168,76,0.15), transparent);
+    animation: lineSlide 8s ease-in-out infinite;
+  }
+
+  .bg-lines::before { left: 30%; height: 60%; top: 20%; animation-delay: 0s; }
+  .bg-lines::after  { left: 70%; height: 40%; top: 30%; animation-delay: 3s; }
+
+  /* ── MAIN CONTAINER ── */
+  .container {
+    position: relative; z-index: 10;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 32px;
+    padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  }
+
+  /* ── TOP BADGE ── */
+  .top-badge {
+    position: absolute;
+    top: max(48px, env(safe-area-inset-top));
+    left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 11px; font-weight: 500;
+    color: var(--green);
+    letter-spacing: 0.05em;
+    opacity: 0;
+    animation: fadeUp 0.6s ease 2.8s forwards;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  /* ── LOGO AREA ── */
+  .logo-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    opacity: 0;
+    animation: logoReveal 1s cubic-bezier(0.16,1,0.3,1) 0.3s forwards;
+  }
+
+  .logo-symbol {
+    width: 88px; height: 88px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #1A1F2E 0%, #0E1117 100%);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(201,168,76,0.1),
+      0 32px 64px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: symbolFloat 4s ease-in-out 1.5s infinite;
+  }
+
+  .logo-symbol::before {
+    content: '';
+    position: absolute; inset: -1px;
+    border-radius: 25px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.3), transparent 50%, rgba(201,168,76,0.1));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    padding: 1px;
+  }
+
+  .logo-svg {
+    width: 44px; height: 44px;
+  }
+
+  .logo-wordmark {
+    font-family: 'Instrument Serif', serif;
+    font-size: 52px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--white) 0%, rgba(244,244,240,0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+  }
+
+  .logo-wordmark .accent {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  /* ── DIVIDER ── */
+  .divider {
+    width: 1px; height: 64px;
+    background: linear-gradient(to bottom, transparent, var(--border), transparent);
+    margin: 48px 0;
+    opacity: 0;
+    animation: fadeIn 0.8s ease 1.4s forwards;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 1.6s forwards;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-val {
+    font-size: 22px;
+    font-weight: 300;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    font-family: 'Instrument Serif', serif;
+  }
+
+  .stat-val span {
+    color: var(--gold);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text2);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .stat-divider {
+    width: 1px; height: 32px;
+    background: var(--border);
+  }
+
+  /* ── ENTER BUTTON ── */
+  .enter-btn {
+    margin-top: 52px;
+    position: relative;
+    opacity: 0;
+    animation: fadeUp 0.7s ease 2s forwards;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+  }
+
+  .enter-btn-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+    color: #080A0F;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 16px 36px;
+    border-radius: 100px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 8px 32px rgba(201,168,76,0.25), 0 2px 8px rgba(201,168,76,0.15);
+  }
+
+  .enter-btn:hover .enter-btn-inner {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(201,168,76,0.35), 0 4px 12px rgba(201,168,76,0.2);
+  }
+
+  .enter-btn:active .enter-btn-inner {
+    transform: translateY(0px);
+  }
+
+  .enter-arrow {
+    width: 16px; height: 16px;
+    transition: transform 0.2s ease;
+  }
+
+  .enter-btn:hover .enter-arrow {
+    transform: translateX(3px);
+  }
+
+  /* ── VERSION ── */
+  .version {
+    position: absolute;
+    bottom: max(32px, calc(24px + env(safe-area-inset-bottom)));
+    font-size: 11px;
+    color: rgba(138,143,158,0.5);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    animation: fadeIn 0.6s ease 2.5s forwards;
+  }
+
+  /* ── LOADING BAR ── */
+  .loading-bar {
+    position: fixed;
+    bottom: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    width: 0%;
+    transition: width 0.1s linear;
+    z-index: 100;
+  }
+
+  /* ── TRANSITION OUT ── */
+  .fade-out {
+    animation: fadeOut 0.5s ease forwards !important;
+  }
+
+  /* ── KEYFRAMES ── */
+  @keyframes gridFade {
+    to { opacity: 1; }
+  }
+
+  @keyframes glowPulse {
+    0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
+    50%       { opacity: 1;   transform: translate(-50%, -60%) scale(1.1); }
+  }
+
+  @keyframes lineSlide {
+    0%   { opacity: 0; transform: translateY(-20px); }
+    20%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; transform: translateY(20px); }
+  }
+
+  @keyframes logoReveal {
+    from { opacity: 0; transform: translateY(24px); filter: blur(8px); }
+    to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  }
+
+  @keyframes symbolFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-6px); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  @keyframes fadeOut {
+    to { opacity: 0; transform: scale(1.03); }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="bg-glow2"></div>
+  <div class="bg-lines"></div>
+</div>
+
+<div class="container" id="splash">
+
+  <div class="top-badge">
+    <div class="badge-dot"></div>
+    Sistema conectado
+  </div>
+
+  <div class="logo-area">
+    <div class="logo-symbol">
+      <!-- Logo SVG — F estilizada con acento dorado -->
+      <svg class="logo-svg" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="8" width="4" height="28" rx="2" fill="url(#g1)"/>
+        <rect x="10" y="8" width="20" height="4" rx="2" fill="url(#g1)"/>
+        <rect x="10" y="20" width="14" height="4" rx="2" fill="url(#g2)" opacity="0.8"/>
+        <circle cx="32" cy="34" r="4" fill="url(#g3)"/>
+        <defs>
+          <linearGradient id="g1" x1="10" y1="8" x2="30" y2="36" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F0D080"/>
+            <stop offset="100%" stop-color="#C9A84C"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="10" y1="20" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#F0D080" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#C9A84C" stop-opacity="0.6"/>
+          </linearGradient>
+          <radialGradient id="g3" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#22C55E"/>
+            <stop offset="100%" stop-color="#16A34A"/>
+          </radialGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <div class="logo-wordmark">flu<span class="accent">j</span>o</div>
+    <div class="logo-sub">Control Financiero</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-val"><span>360°</span></div>
+      <div class="stat-label">Visibilidad</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <div class="stat-val"><span>∞</span></div>
+      <div class="stat-label">Historial</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <div class="stat-val"><span>1</span></div>
+      <div class="stat-label">Plataforma</div>
+    </div>
+  </div>
+
+  <button class="enter-btn" onclick="enterApp()">
+    <div class="enter-btn-inner">
+      Entrar
+      <svg class="enter-arrow" viewBox="0 0 16 16" fill="none">
+        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </button>
+
+  <div class="version">v5.9 · Flujo App</div>
+
+</div>
+
+<div class="loading-bar" id="loadingBar"></div>
+
+<script>
+  const APP_URL = 'app.html';
+  let autoTimer = null;
+  let progress = 0;
+  let barInterval = null;
+
+  // Auto-redirect después de 3 segundos
+  function startAutoRedirect() {
+    const bar = document.getElementById('loadingBar');
+
+    // Animar barra de progreso
+    barInterval = setInterval(() => {
+      progress += 100 / 30; // 3 segundos a 10fps
+      bar.style.width = Math.min(progress, 95) + '%';
+      if (progress >= 95) clearInterval(barInterval);
+    }, 100);
+
+    autoTimer = setTimeout(() => {
+      enterApp();
+    }, 3000);
+  }
+
+  function enterApp() {
+    clearTimeout(autoTimer);
+    clearInterval(barInterval);
+
+    // Completar barra
+    const bar = document.getElementById('loadingBar');
+    bar.style.transition = 'width 0.3s ease';
+    bar.style.width = '100%';
+
+    // Fade out y redirigir
+    setTimeout(() => {
+      document.getElementById('splash').classList.add('fade-out');
+      document.querySelector('.bg').classList.add('fade-out');
+    }, 200);
+
+    setTimeout(() => {
+      window.location.href = APP_URL;
+    }, 700);
+  }
+
+  // Iniciar cuando carga la página
+  window.addEventListener('load', () => {
+    setTimeout(startAutoRedirect, 500);
+  });
+</script>
+
+</body>
+</html>

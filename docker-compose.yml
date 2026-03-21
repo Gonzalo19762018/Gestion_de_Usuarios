@@ -1,0 +1,84 @@
+#version: "3.8"
+
+# ─────────────────────────────────────────────────────────────
+#  flujo · stack completo
+#  Servicios: api (Node+SQLite) · web (Nginx) · tunnel (Cloudflare)
+#
+#  Levantar:     docker compose up -d
+#  Actualizar:   docker compose build web && docker compose up -d --no-deps web
+#  Logs:         docker compose logs -f
+#  Backup:       docker compose exec api node src/backup.js
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  # ── API: Node.js + SQLite ─────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: flujo-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - PORT=3000
+      - DB_PATH=/app/data/flujo.db
+    volumes:
+      - flujo-data:/app/data          # SQLite DB persiste aquí
+    expose:
+      - "3000"                        # Solo accesible dentro de la red Docker
+    networks:
+      - flujo-net
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>r.ok?process.exit(0):process.exit(1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── WEB: Nginx sirve la SPA y proxea /api/* ───────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: flujo-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"           # Solo local — Cloudflare conecta aquí
+    networks:
+      - flujo-net
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+#test: ["CMD-SHELL", "printf 'GET /health HTTP/1.0\\r\\n\\r\\n' | nc localhost 80 | grep -q ok"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+#  curl:
+#    healthcheck:
+#      test: ["CMD-SHELL", "printf 'GET /health HTTP/1.0\\r\\n\\r\\n' | nc localhost 80 | grep -q ok"]
+#      interval: 20s
+#      timeout: 5s
+#      retries: 3
+
+  # ── CLOUDFLARE TUNNEL ─────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: flujo-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    network_mode: host          # LXC no soporta Docker NAT — usar red del host directamente
+    depends_on:
+      web:
+        condition: service_started
+
+volumes:
+  flujo-data:           # Volumen nombrado — sobrevive rebuilds y reinicios
+
+networks:
+  flujo-net:
+    driver: bridge

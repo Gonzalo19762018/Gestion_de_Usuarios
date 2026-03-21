@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Flujo — Dashboard Financiero</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/variables.css?v=3">
+<link rel="stylesheet" href="css/layout.css?v=5">
+<link rel="stylesheet" href="css/components.css?v=3">
+<link rel="stylesheet" href="css/mobile.css?v=7">
+<style>
+.skip-link{position:absolute;top:-40px;left:0;background:var(--accent,#6c63ff);color:#fff;padding:8px 16px;border-radius:0 0 8px 0;font-size:14px;font-weight:600;z-index:10000;text-decoration:none;transition:top .1s}
+.skip-link:focus{top:0}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Saltar al contenido principal</a>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" aria-label="Navegación principal">
+  <div class="sidebar-logo">
+    <div class="logo-text">flu<span>j</span>o</div>
+    <div class="logo-sub">Control Financiero</div>
+  </div>
+  <div class="nav">
+    <!-- Financial nav — hidden for admin -->
+    <div id="financialNav">
+      <div class="nav-section" aria-hidden="true">Vistas</div>
+      <button class="nav-item active" data-view="dashboard">
+        <span class="nav-icon" aria-hidden="true">⬡</span> Dashboard
+      </button>
+      <button class="nav-item" data-view="meses">
+        <span class="nav-icon" aria-hidden="true">◫</span> Todos los meses
+      </button>
+      <button class="nav-item" data-view="presupuesto">
+        <span class="nav-icon" aria-hidden="true">🎯</span> Presupuestos
+      </button>
+      <button class="nav-item" data-view="cuentas">
+        <span class="nav-icon" aria-hidden="true">🏦</span> Cuentas
+      </button>
+    </div>
+    <!-- Admin nav — hidden by default, shown for admin role -->
+    <div id="adminNav" style="display:none">
+      <div class="nav-divider"></div>
+      <div class="nav-section" aria-hidden="true">Admin</div>
+      <button class="nav-item" id="navUsuarios" data-view="usuarios">
+        <span class="nav-icon" aria-hidden="true">👥</span> Usuarios
+      </button>
+    </div>
+    <!-- Quick access months — hidden for admin -->
+    <div id="quickAccessNav">
+      <div class="nav-divider"></div>
+      <div class="nav-section">Acceso rápido</div>
+      <div id="sidebarMonths"></div>
+    </div>
+  </div>
+  <!-- + Nueva transacción — hidden for admin -->
+  <div class="month-nav" id="monthNavBtn">
+    <button class="btn btn-primary" id="btnSidebarAdd" style="width:100%;justify-content:center">+ Nueva transacción</button>
+  </div>
+  <!-- User info + logout -->
+  <div id="sidebarUser" style="display:none;padding:0 12px 10px">
+    <div style="display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:12px;padding:10px 12px">
+      <div id="suAvatar" style="font-size:18px;line-height:1">👤</div>
+      <div style="flex:1;min-width:0">
+        <div id="suName" style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+        <div id="suRole" style="font-size:11px;color:var(--text3)">—</div>
+      </div>
+      <button id="btnChangePw" title="Cambiar contraseña" aria-label="Cambiar contraseña"
+        style="background:none;border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text3);padding:5px 8px;border-radius:8px;line-height:1">🔑</button>
+      <button id="btnSidebarLogout" title="Cerrar sesión" aria-label="Cerrar sesión"
+        style="background:none;border:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text3);padding:5px 8px;border-radius:8px;line-height:1">↩</button>
+    </div>
+  </div>
+  <div class="theme-toggle">
+    <span class="theme-toggle-label" id="themeLabel">🌙 Oscuro</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="themeToggle">
+      <div class="toggle-track"></div>
+      <div class="toggle-thumb"></div>
+    </label>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV (mobile only) -->
+<nav class="bottom-nav" id="bottomNav" aria-label="Navegación móvil">
+  <button class="bn-item active" id="bn-dashboard" data-view="dashboard">
+    <span class="bn-icon">⬡</span>
+    <span>Inicio</span>
+  </button>
+  <button class="bn-item" id="bn-meses" data-view="meses">
+    <span class="bn-icon">◫</span>
+    <span>Meses</span>
+  </button>
+  <button class="bn-add" id="btnMobileAdd" title="Agregar" aria-label="Agregar transacción">
+    <div class="bn-add-circle">+</div>
+  </button>
+  <button class="bn-item" id="bn-presupuesto" data-view="presupuesto">
+    <span class="bn-icon">🎯</span>
+    <span>Presupuesto</span>
+  </button>
+  <button class="bn-item" id="bn-cuentas" data-view="cuentas">
+    <span class="bn-icon">🏦</span>
+    <span>Cuentas</span>
+  </button>
+  <button class="bn-item" id="bn-usuarios" data-view="usuarios" style="display:none">
+    <span class="bn-icon">👥</span>
+    <span>Usuarios</span>
+  </button>
+</nav>
+<main id="main" class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <div class="db-pill" id="dbPill"><div class="db-dot"></div>IndexedDB</div>
+      <!-- Theme mini toggle for mobile -->
+      <label class="toggle-switch mobile-only">
+        <input type="checkbox" id="themeToggleMobile">
+        <div class="toggle-track"></div>
+        <div class="toggle-thumb"></div>
+      </label>
+      <!-- Logout button for mobile (shown only when authenticated) -->
+      <button id="mobileLogoutBtn" class="mobile-only"
+        style="display:none;background:none;border:1px solid var(--border);cursor:pointer;font-size:14px;color:var(--text3);padding:6px 10px;border-radius:8px;line-height:1"
+        title="Cerrar sesión" aria-label="Cerrar sesión">↩</button>
+      <button class="btn btn-ghost desktop-only" id="btnTopbarAdd">+ Agregar</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VIEW: DASHBOARD -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="view" id="view-dashboard">
+    <!-- YEAR SELECTOR BAR -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text2)">Resumen anual</div>
+      <select id="dashYearSel"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 20px;font-family:'DM Mono',monospace;font-size:15px;font-weight:700;outline:none;cursor:pointer"></select>
+    </div>
+    <!-- STAT CARDS -->
+    <div class="stat-grid" style="margin-top:0; padding-top:0">
+      <div class="stat-card green">
+        <div class="stat-label">💰 Ingreso total (año)</div>
+        <div class="stat-value" id="ds-income">$0</div>
+        <div class="stat-sub" id="ds-income-sub">—</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">📤 Gasto total (año)</div>
+        <div class="stat-value" id="ds-expense">$0</div>
+        <div class="stat-sub" id="ds-expense-sub">— transacciones</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">💳 Tarjeta / año</div>
+        <div class="stat-value" id="ds-defer">$0</div>
+        <div class="stat-sub" id="ds-defer-sub">— diferidos</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">🏦 Ahorro acumulado</div>
+        <div class="stat-value" id="ds-saving">$0</div>
+        <div class="stat-sub" id="ds-saving-sub">0% tasa promedio</div>
+        <div class="stat-badge" id="ds-saving-badge"></div>
+      </div>
+    </div>
+
+    <!-- TREND + DONUT ROW -->
+    <div class="chart-grid-3">
+      <!-- TREND BAR CHART -->
+      <div class="chart-card">
+        <div class="chart-card-title">Ingresos vs Gastos</div>
+        <div class="chart-card-sub">Últimos 6 meses</div>
+        <canvas id="trendChart" height="200"></canvas>
+        <div class="trend-tooltip" id="trendTooltip"></div>
+      </div>
+      <!-- DONUT CAT -->
+      <div class="chart-card">
+        <div class="chart-card-title">Categorías</div>
+        <div class="chart-card-sub">Gasto anual agrupado</div>
+        <div class="donut-wrap" style="margin:8px 0">
+          <canvas id="donutDash" width="160" height="160"></canvas>
+          <div class="donut-center">
+            <div class="donut-center-lbl">Total</div>
+            <div class="donut-center-val" id="donutDashTotal">$0</div>
+          </div>
+        </div>
+        <div class="legend-list" id="donutDashLegend" style="max-height:160px;overflow-y:auto"></div>
+      </div>
+      <!-- SAVING RATE -->
+      <div class="chart-card">
+        <div class="chart-card-title">Tasa de ahorro</div>
+        <div class="chart-card-sub">Por mes</div>
+        <canvas id="savingRateChart" height="160"></canvas>
+        <div style="margin-top:14px">
+          <div id="savingRateList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTH CARDS PREVIEW -->
+    <div class="section-header">
+      <div class="section-title">Meses recientes</div>
+      <button class="btn btn-ghost" id="btnViewAllMonths">Ver todos →</button>
+    </div>
+    <div class="months-grid" id="dashMonthsGrid"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VIEW: TODOS LOS MESES -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="view" id="view-meses">
+    <div class="section-header" style="margin-bottom:24px">
+      <div>
+        <div class="section-title">Historial de meses</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:4px">Haz clic en un mes para ver el detalle completo</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <select id="yearFilter" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:8px 14px;font-family:'Cabinet Grotesk',sans-serif;font-size:13px;outline:none;appearance:none;cursor:pointer"></select>
+      </div>
+    </div>
+    <div class="months-grid" id="allMonthsGrid"></div>
+    <!-- YEAR SUMMARY -->
+    <div class="chart-card" style="margin-top:8px">
+      <div class="chart-card-title">Resumen del año seleccionado</div>
+      <div class="chart-card-sub" id="yearSummarySub">—</div>
+      <canvas id="yearBarChart" height="180" style="margin-top:16px"></canvas>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VIEW: PRESUPUESTOS -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="view" id="view-presupuesto">
+    <!-- MONTH TABS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:22px" id="budgetMonthTitle">Presupuesto</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:3px">Planifica tus gastos por categoría macro y controla en tiempo real</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn btn-ghost" id="btnCopyBudget">↙ Copiar del mes anterior</button>
+        <button class="btn btn-primary" id="btnOpenBudgetModal">⚙ Configurar límites</button>
+      </div>
+    </div>
+    <div class="month-tabs" id="budgetMonthTabs"></div>
+
+    <!-- ALERTS -->
+    <div id="budgetAlerts"></div>
+
+    <!-- HERO STATS -->
+    <div class="budget-hero">
+      <div class="stat-card green">
+        <div class="stat-label">✅ Presupuestado</div>
+        <div class="stat-value" style="font-size:22px" id="bh-planned">$0</div>
+        <div class="stat-sub" id="bh-planned-sub">Total planificado</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">📤 Gastado</div>
+        <div class="stat-value" style="font-size:22px" id="bh-spent">$0</div>
+        <div class="stat-sub" id="bh-spent-sub">0% del presupuesto</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">💠 Disponible</div>
+        <div class="stat-value" style="font-size:22px" id="bh-avail">$0</div>
+        <div class="stat-sub" id="bh-avail-sub">Queda por gastar</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">🔴 Sin límite</div>
+        <div class="stat-value" style="font-size:22px" id="bh-nolimit">0</div>
+        <div class="stat-sub">Categorías sin configurar</div>
+      </div>
+    </div>
+
+    <!-- COMPARE CHARTS -->
+    <div class="budget-compare-grid">
+      <div class="chart-card">
+        <div class="chart-card-title">Planificado vs Gastado por macro</div>
+        <div class="chart-card-sub">Vista comparativa de categorías</div>
+        <canvas id="budgetCompareChart" height="220" style="margin-top:12px"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Ejecución del presupuesto</div>
+        <div class="chart-card-sub">% usado por categoría macro</div>
+        <canvas id="budgetRadarChart" height="220" style="margin-top:12px"></canvas>
+      </div>
+    </div>
+
+    <!-- MACRO CARDS -->
+    <div class="section-header" style="margin-bottom:16px">
+      <div class="section-title">Categorías macro</div>
+    </div>
+    <div class="macro-grid" id="macroGrid"></div>
+  </div>
+
+  <!-- BUDGET CONFIG MODAL -->
+  <div class="modal-overlay" id="budgetModalOverlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="budgetModalTitle" style="width:600px;max-height:85vh;overflow-y:auto">
+      <div class="modal-header">
+        <div class="modal-title" id="budgetModalTitle">⚙ Configurar límites de presupuesto</div>
+        <button class="modal-close" id="btnCloseBudgetModal" aria-label="Cerrar modal de presupuesto">×</button>
+      </div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:20px">
+        Define cuánto planeas gastar en cada categoría macro este mes. Los límites se guardan por mes.
+      </div>
+      <div id="budgetConfigList"></div>
+      <button class="btn btn-primary" id="btnSaveBudgetLimits" style="width:100%;padding:12px;margin-top:16px">
+        💾 Guardar todos los límites
+      </button>
+    </div>
+  </div>
+  <div class="view" id="view-detail">
+    <div class="detail-header">
+      <button class="btn-back" id="btnGoBack" aria-label="Volver">←</button>
+      <div>
+        <div class="detail-month-title" id="detailTitle">Enero 2025</div>
+        <div class="detail-month-sub" id="detailSub">—</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <button class="btn btn-ghost" id="btnPrevMonth" aria-label="Ir al mes anterior">← Mes anterior</button>
+        <button class="btn btn-ghost" id="btnNextMonth" aria-label="Ir al mes siguiente">Mes siguiente →</button>
+      </div>
+    </div>
+
+    <!-- ROLLOVER BANNER -->
+    <div class="rollover-banner hidden" id="detailRollover">
+      <div class="rb-left">
+        <div class="rb-ico">💰</div>
+        <div>
+          <div class="rb-text">Ahorro transferido: <strong id="detailRolloverAmt">$0</strong></div>
+          <div class="rb-sub" id="detailRolloverSub"></div>
+        </div>
+      </div>
+      <button class="rb-dismiss" id="btnRolloverDismiss" aria-label="Descartar aviso">×</button>
+    </div>
+
+    <!-- STAT CARDS DETALLE -->
+    <div class="stat-grid" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat-card green">
+        <div class="stat-label">Ingreso base</div>
+        <div class="stat-value" style="font-size:20px" id="dsc-income">$0</div>
+        <div class="stat-sub" id="dsc-income-desc">—</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Ahorro anterior</div>
+        <div class="stat-value" style="font-size:20px" id="dsc-rollover">$0</div>
+        <div class="stat-sub" id="dsc-rollover-lbl">Sin datos</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Egresos</div>
+        <div class="stat-value" style="font-size:20px" id="dsc-expense">$0</div>
+        <div class="stat-sub" id="dsc-expense-count">0 tx</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-label">Tarjeta / mes</div>
+        <div class="stat-value" style="font-size:20px" id="dsc-defer">$0</div>
+        <div class="stat-sub" id="dsc-defer-count">0 diferidos</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-label">Ahorro neto</div>
+        <div class="stat-value" style="font-size:20px" id="dsc-saving">$0</div>
+        <div class="stat-sub" id="dsc-saving-pct">0%</div>
+      </div>
+    </div>
+
+    <!-- INCOME FORM -->
+    <div class="form-card">
+      <div class="section-title" style="margin-bottom:16px">Ingreso mensual</div>
+      <div class="form-row cols-4">
+        <div class="field"><label>Ingreso neto base</label><input type="number" id="d-income" placeholder="0.00" step="0.01" min="0"></div>
+        <div class="field"><label>Descripción</label><input type="text" id="d-income-desc" placeholder="Salario, freelance…"></div>
+        <div class="field"><label>Incluir ahorro anterior</label>
+          <select id="d-include-rollover">
+            <option value="1">✅ Sí, incluir</option>
+            <option value="0">❌ No incluir</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" id="btnSaveIncome" style="width:100%;padding:10px 14px">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL MAIN GRID -->
+    <div class="detail-main">
+      <!-- LEFT -->
+      <div class="detail-left">
+        <!-- CHARTS ROW -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="chart-card">
+            <div class="chart-card-title">Distribución de gastos</div>
+            <div class="chart-card-sub" id="detailDonutSub">Este mes</div>
+            <div class="donut-wrap" style="margin:12px 0">
+              <canvas id="detailDonut" width="160" height="160"></canvas>
+              <div class="donut-center">
+                <div class="donut-center-lbl">Gastos</div>
+                <div class="donut-center-val" id="detailDonutTotal">$0</div>
+              </div>
+            </div>
+            <div class="legend-list" id="detailDonutLegend" style="max-height:180px;overflow-y:auto"></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Balance mensual</div>
+            <div class="chart-card-sub">Flujo de dinero</div>
+            <canvas id="detailBarChart" height="160" style="margin-top:8px"></canvas>
+            <div class="breakdown-list" id="detailBreakdown"></div>
+          </div>
+        </div>
+
+        <!-- TRANSACTIONS -->
+        <div class="txn-panel">
+          <div class="txn-panel-header">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px">Movimientos del mes</span>
+              <span style="font-size:11px;color:var(--text3);background:var(--surface2);padding:3px 8px;border-radius:6px;border:1px solid var(--border)">↗ clic para detalle</span>
+            </div>
+            <div class="filter-pills">
+              <button class="filter-pill active" data-filter="todos">Todos</button>
+              <button class="filter-pill" data-filter="gasto">Gastos</button>
+              <button class="filter-pill" data-filter="tarjeta">Tarjeta</button>
+            </div>
+          </div>
+          <div class="txn-list-wrap" id="txnListWrap"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="detail-right">
+        <!-- SAVINGS PANEL -->
+        <div class="chart-card">
+          <div class="chart-card-title">💎 Ahorro del mes</div>
+          <div class="chart-card-sub">Sobre el ingreso total disponible</div>
+          <div style="margin-top:12px">
+            <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--green)" id="savBigDetail">$0</div>
+            <div style="font-size:13px;color:var(--text3);margin-top:4px" id="savPctDetail">0% guardado</div>
+          </div>
+          <div class="sav-bar-wrap"><div class="sav-bar" id="savBarDetail" style="width:0%"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace">
+            <span id="savMetaL">$0 gastado</span>
+            <span id="savMetaR">$0 total</span>
+          </div>
+          <div class="breakdown-list" id="savBreakdown"></div>
+        </div>
+
+        <!-- DIFERIDOS -->
+        <div class="chart-card" id="deferCard" style="display:none">
+          <div class="chart-card-title">💳 Diferidos activos</div>
+          <div class="chart-card-sub">Cuotas del mes actual</div>
+          <div id="deferListDetail" style="margin-top:14px"></div>
+        </div>
+
+        <!-- QUICK ADD -->
+        <div class="chart-card">
+          <div class="chart-card-title">⚡ Agregar gasto rápido</div>
+          <div class="chart-card-sub">Shortcut para este mes</div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+            <div class="type-tabs" id="quickTypeTabs" style="margin-bottom:0">
+              <button class="type-tab t-gasto" data-quick-type="gasto">💸 Gasto</button>
+              <button class="type-tab" data-quick-type="tarjeta">💳 Diferido</button>
+            </div>
+            <div class="field"><label>Descripción</label><input type="text" id="q-name" placeholder="Supermercado…"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div class="field"><label>Monto</label><input type="number" id="q-amount" placeholder="0.00" step="0.01" min="0"></div>
+              <div class="field" id="q-cuotas-field" style="display:none"><label>Cuotas</label><input type="number" id="q-cuotas" value="1" min="1" max="60"></div>
+            </div>
+            <div class="field"><label>Categoría</label>
+              <select id="q-cat">
+                <option value="Vivienda">🏠 Vivienda</option>
+                <option value="Alimentación">🍔 Alimentación</option>
+                <option value="Transporte">🚗 Transporte</option>
+                <option value="Salud">💊 Salud</option>
+                <option value="Entretenimiento">🎬 Entretenimiento</option>
+                <option value="Educación">📚 Educación</option>
+                <option value="Ropa">👕 Ropa</option>
+                <option value="Servicios">⚡ Servicios</option>
+                <option value="Suscripciones">📱 Suscripciones</option>
+                <option value="Restaurantes">🍽️ Restaurantes</option>
+                <option value="Viajes">✈️ Viajes</option>
+                <option value="Otros">📦 Otros</option>
+              </select>
+            </div>
+            <div class="field"><label>Fecha</label><input type="date" id="q-date"></div>
+            <div class="field"><label>Cuenta</label><select id="q-account"></select></div>
+            <button class="btn btn-primary" id="btnQuickAdd" style="width:100%">+ Agregar transacción</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VIEW: CUENTAS -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="view" id="view-cuentas">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px">Cuentas</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Débito · Crédito · Efectivo</div>
+      </div>
+      <button class="btn btn-primary" id="btnNewAccount">+ Nueva cuenta</button>
+    </div>
+
+    <!-- Account cards grid -->
+    <div id="accountsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:28px"></div>
+
+    <!-- Monthly breakdown by account -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="chart-card">
+        <div class="chart-card-title">Gastos por cuenta · <span id="acctBreakMonthLabel" style="color:var(--accent)"></span></div>
+        <div class="chart-card-sub">Débito vs Crédito vs Efectivo</div>
+        <div id="acctBreakList" style="margin-top:14px"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Distribución del mes</div>
+        <div class="chart-card-sub">Por tipo de pago</div>
+        <div class="donut-wrap" style="margin:16px 0">
+          <canvas id="acctDonut" width="160" height="160"></canvas>
+          <div class="donut-center">
+            <div class="donut-center-lbl">Total</div>
+            <div class="donut-center-val" id="acctDonutTotal">$0</div>
+          </div>
+        </div>
+        <div id="acctDonutLegend"></div>
+      </div>
+    </div>
+
+    <!-- Full transaction history filtered by account -->
+    <div class="chart-card" style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-card-title" style="margin:0">Historial por cuenta</div>
+        <select id="acctHistFilter"
+          style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:6px 12px;font-size:12px;outline:none;cursor:pointer">
+          <option value="all">Todas las cuentas</option>
+        </select>
+      </div>
+      <div id="acctHistList"></div>
+    </div>
+
+    <!-- DATA MANAGEMENT PANEL -->
+    <div class="chart-card" style="margin-top:16px">
+      <div class="chart-card-title">🔧 Gestión de datos</div>
+      <div class="chart-card-sub">Migración, backup y exportación</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px" id="dataManagementBtns">
+        <div style="background:var(--surface2);border-radius:12px;padding:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--yellow)">📦 Migrar a Backend</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Copia tus datos de IndexedDB al servidor SQLite. Solo necesario la primera vez.</div>
+          <button class="btn btn-primary" style="width:100%;font-size:12px" id="btnMigrate">Migrar datos locales → SQLite</button>
+        </div>
+        <div style="background:var(--surface2);border-radius:12px;padding:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--green)">💾 Exportar backup</div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Descarga un JSON con todos tus datos. Guárdalo en un lugar seguro.</div>
+          <button class="btn btn-primary" id="btnExportBackup" style="width:100%;font-size:12px;background:var(--green);border-color:var(--green)">Descargar backup JSON</button>
+        </div>
+      </div>
+      <div id="backendStatus" style="margin-top:12px;font-size:12px;color:var(--text3);text-align:center"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- VIEW: USUARIOS (admin only)               -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="view" id="view-usuarios">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px">Gestión de usuarios</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Solo administradores pueden ver y gestionar usuarios</div>
+      </div>
+      <button id="btnAdminLogout" class="btn btn-ghost"
+        style="font-size:12px;color:var(--red);border-color:rgba(255,92,122,.4);display:flex;align-items:center;gap:6px">
+        ↩ Cerrar sesión
+      </button>
+    </div>
+
+    <!-- Lista de usuarios -->
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-card-title">Usuarios registrados</div>
+      <div id="usersList" style="margin-top:14px">
+        <div style="color:var(--text3);font-size:13px">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Formulario crear usuario -->
+    <div class="chart-card">
+      <div class="chart-card-title">Crear nuevo usuario</div>
+      <div class="chart-card-sub">El rol es siempre genérico. Solo el administrador puede crear usuarios.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+        <div class="field">
+          <label>Nombre de usuario (2–80 chars)</label>
+          <input type="text" id="nu-username" maxlength="80" placeholder="Ej: maria" autocomplete="off">
+        </div>
+        <div class="field">
+          <label>Contraseña (mín. 8 caracteres, 1 letra, 1 número)</label>
+          <input type="password" id="nu-password" maxlength="200" placeholder="Mín. 8 chars, 1 letra, 1 número" autocomplete="new-password">
+        </div>
+      </div>
+      <div id="nu-error" style="color:var(--red);font-size:12px;min-height:18px;margin:8px 0"></div>
+      <button id="nu-submit" class="btn btn-primary">+ Crear usuario</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- TRANSACTION DETAIL DRAWER -->
+<div class="txn-drawer-overlay" id="drawerOverlay"></div>
+<div class="txn-drawer" id="txnDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerName">
+  <div class="drawer-header">
+    <div class="drawer-header-left">
+      <div class="drawer-big-ico" id="drawerIco">📦</div>
+      <div class="drawer-title-block">
+        <div class="drawer-txn-name" id="drawerName">—</div>
+        <div class="drawer-txn-meta">
+          <span id="drawerDate" class="txn-date"></span>
+          <span class="drawer-cat-pill" id="drawerCatPill"></span>
+          <span class="drawer-type-pill" id="drawerTypePill"></span>
+        </div>
+      </div>
+    </div>
+    <button class="drawer-close" id="btnDrawerClose" aria-label="Cerrar panel">×</button>
+  </div>
+
+  <div class="drawer-body">
+    <!-- AMOUNT HERO -->
+    <div class="drawer-amount-hero">
+      <div class="drawer-amount-block">
+        <div class="drawer-amount-label" id="drawerAmtLabel">Monto del gasto</div>
+        <div class="drawer-amount-val" id="drawerAmtVal">$0.00</div>
+        <div class="drawer-amount-sub" id="drawerAmtSub"></div>
+      </div>
+      <span class="drawer-amount-badge" id="drawerAmtBadge"></span>
+    </div>
+
+    <!-- INFO GRID -->
+    <div class="drawer-section">
+      <div class="drawer-section-title">Detalle del gasto</div>
+      <div class="drawer-info-grid">
+        <div class="drawer-info-cell">
+          <div class="dic-label">Fecha</div>
+          <div class="dic-val" id="drawerInfoDate">—</div>
+        </div>
+        <div class="drawer-info-cell">
+          <div class="dic-label">Tipo</div>
+          <div class="dic-val" id="drawerInfoType">—</div>
+        </div>
+        <div class="drawer-info-cell">
+          <div class="dic-label">Categoría</div>
+          <div class="dic-val" id="drawerInfoCat">—</div>
+        </div>
+        <div class="drawer-info-cell">
+          <div class="dic-label">Monto total</div>
+          <div class="dic-val mono" id="drawerInfoTotal">—</div>
+        </div>
+        <div class="drawer-info-cell" id="drawerInfoCuotaCell">
+          <div class="dic-label">Cuota mensual</div>
+          <div class="dic-val mono" id="drawerInfoCuota">—</div>
+        </div>
+        <div class="drawer-info-cell" id="drawerInfoPlazoCell">
+          <div class="dic-label">Plazo total</div>
+          <div class="dic-val" id="drawerInfoPlazo">—</div>
+        </div>
+        <div class="drawer-info-cell full" id="drawerInfoMacroCell">
+          <div class="dic-label">Categoría macro</div>
+          <div class="drawer-macro-badge" id="drawerMacroBadge">
+            <span class="dmb-icon" id="drawerMacroIcon">📦</span>
+            <div class="dmb-info">
+              <div class="dmb-name" id="drawerMacroName">—</div>
+              <div class="dmb-group" id="drawerMacroGroup">—</div>
+              <div class="dmb-limit" id="drawerMacroLimit"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUOTAS VISUALIZATION (tarjeta only) -->
+    <div class="drawer-section" id="drawerCuotasSection" style="display:none">
+      <div class="drawer-section-title">Progreso de cuotas</div>
+      <div class="drawer-cuotas-viz">
+        <div class="dcv-header">
+          <span id="dcvPaidLabel">1 pagada</span>
+          <span id="dcvTotalLabel">de ? cuotas</span>
+        </div>
+        <div class="dcv-dots" id="dcvDots"></div>
+        <div class="dcv-legend">
+          <span><span class="dot" style="background:var(--yellow)"></span>Pagada</span>
+          <span><span class="dot" style="background:var(--surface3);border:1px solid var(--border2)"></span>Pendiente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUDGET IMPACT -->
+    <div class="drawer-section" id="drawerBudgetSection">
+      <div class="drawer-section-title">Impacto en presupuesto</div>
+      <div id="drawerBudgetImpact"></div>
+    </div>
+
+    <!-- EDIT SECTION -->
+    <div class="drawer-edit-section">
+      <div class="drawer-edit-title">✏️ Editar transacción</div>
+      <div class="drawer-edit-grid">
+        <div class="field"><label>Descripción</label><input type="text" id="edit-name"></div>
+        <div class="field"><label>Monto</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
+      </div>
+      <div class="drawer-edit-grid">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="edit-cat">
+            <option value="Vivienda">🏠 Vivienda</option>
+            <option value="Alimentación">🍔 Alimentación</option>
+            <option value="Transporte">🚗 Transporte</option>
+            <option value="Salud">💊 Salud</option>
+            <option value="Entretenimiento">🎬 Entretenimiento</option>
+            <option value="Educación">📚 Educación</option>
+            <option value="Ropa">👕 Ropa</option>
+            <option value="Servicios">⚡ Servicios</option>
+            <option value="Suscripciones">📱 Suscripciones</option>
+            <option value="Restaurantes">🍽️ Restaurantes</option>
+            <option value="Viajes">✈️ Viajes</option>
+            <option value="Otros">📦 Otros</option>
+          </select>
+        </div>
+        <div class="field"><label>Fecha</label><input type="date" id="edit-date"></div>
+      </div>
+      <div class="drawer-edit-grid full">
+        <div class="field"><label>Cuenta</label><select id="edit-account"></select></div>
+      </div>
+      <div class="drawer-edit-actions">
+        <button class="btn-save-edit">💾 Guardar cambios</button>
+        <button class="btn-delete-txn">🗑 Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="modal-overlay" id="confirmOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" style="max-width:380px;padding:24px 28px">
+    <div id="confirmTitle" style="font-size:15px;font-weight:700;margin-bottom:10px">Confirmar eliminación</div>
+    <div id="confirmMsg" style="font-size:13px;color:var(--text3);line-height:1.5;margin-bottom:24px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" id="btnConfirmCancel">Cancelar</button>
+      <button class="btn" id="btnConfirmExec"
+        style="background:rgba(255,92,122,.15);color:var(--red);border:1px solid rgba(255,92,122,.4)">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMBIAR CONTRASEÑA -->
+<div class="modal-overlay" id="changePwOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="changePwTitle" style="width:360px">
+    <div class="modal-header">
+      <div class="modal-title" id="changePwTitle">🔑 Cambiar contraseña</div>
+      <button class="modal-close" id="btnChangePwClose" aria-label="Cerrar modal de contraseña">×</button>
+    </div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">Contraseña actual</label>
+        <input type="password" id="cpCurrent" autocomplete="current-password" maxlength="200"
+          style="width:100%;box-sizing:border-box" placeholder="••••••••">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">Nueva contraseña</label>
+        <input type="password" id="cpNew" autocomplete="new-password" maxlength="200"
+          style="width:100%;box-sizing:border-box" placeholder="Mín. 8 chars, 1 letra, 1 número">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:4px">Confirmar nueva contraseña</label>
+        <input type="password" id="cpConfirm" autocomplete="new-password" maxlength="200"
+          style="width:100%;box-sizing:border-box" placeholder="••••••••">
+      </div>
+      <div id="cpError" style="color:var(--red);font-size:12px;display:none"></div>
+      <button class="btn btn-primary" id="btnSubmitChangePw" style="width:100%;justify-content:center">Guardar contraseña</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADD GLOBAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTxnModalTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="addTxnModalTitle">Nueva transacción</div>
+      <button class="modal-close" id="btnModalClose" aria-label="Cerrar modal">×</button>
+    </div>
+    <div class="type-tabs" id="modalTypeTabs" style="margin-bottom:16px">
+      <button class="type-tab t-gasto" data-modal-type="gasto">💸 Gasto</button>
+      <button class="type-tab" data-modal-type="tarjeta">💳 Diferido</button>
+    </div>
+    <div class="form-row cols-2">
+      <div class="field"><label>Descripción</label><input type="text" id="m-name" placeholder="Netflix, mercado…"></div>
+      <div class="field"><label>Monto</label><input type="number" id="m-amount" placeholder="0.00" step="0.01" min="0"></div>
+    </div>
+    <div class="form-row cols-3">
+      <div class="field"><label>Categoría</label>
+        <select id="m-cat">
+          <option value="Vivienda">🏠 Vivienda</option>
+          <option value="Alimentación">🍔 Alimentación</option>
+          <option value="Transporte">🚗 Transporte</option>
+          <option value="Salud">💊 Salud</option>
+          <option value="Entretenimiento">🎬 Entretenimiento</option>
+          <option value="Educación">📚 Educación</option>
+          <option value="Ropa">👕 Ropa</option>
+          <option value="Servicios">⚡ Servicios</option>
+          <option value="Suscripciones">📱 Suscripciones</option>
+          <option value="Restaurantes">🍽️ Restaurantes</option>
+          <option value="Viajes">✈️ Viajes</option>
+          <option value="Otros">📦 Otros</option>
+        </select>
+      </div>
+      <div class="field"><label>Mes</label>
+        <select id="m-month"></select>
+      </div>
+      <div class="field" id="m-cuotas-wrap" style="display:none"><label>Cuotas</label><input type="number" id="m-cuotas" value="1" min="1" max="60"></div>
+    </div>
+    <div class="field" style="margin-bottom:16px"><label>Fecha</label><input type="date" id="m-date"></div>
+    <div class="field" style="margin-bottom:16px"><label>Cuenta</label><select id="m-account"></select></div>
+    <button class="btn btn-primary" id="btnModalAdd" style="width:100%;padding:12px">Guardar transacción</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ACCOUNT MODAL -->
+<div class="modal-overlay" id="accountModalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="accountModalTitle" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title" id="accountModalTitle">Nueva cuenta</div>
+      <button class="modal-close" id="btnAccountModalClose" aria-label="Cerrar modal de cuenta">×</button>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Nombre</label><input type="text" id="ac-name" placeholder="Ej: Pichincha Débito, Visa Diners…"></div>
+    <div class="form-row cols-2">
+      <div class="field"><label>Tipo</label>
+        <select id="ac-type">
+          <option value="debito">💳 Débito</option>
+          <option value="credito">💎 Crédito</option>
+          <option value="efectivo">💵 Efectivo</option>
+          <option value="ahorro">🏦 Ahorro</option>
+        </select>
+      </div>
+      <div class="field"><label>Color</label>
+        <select id="ac-color">
+          <option value="#6c63ff">🟣 Violeta</option>
+          <option value="#3dffa0">🟢 Verde</option>
+          <option value="#ffc947">🟡 Amarillo</option>
+          <option value="#ff5c7a">🔴 Rojo</option>
+          <option value="#47c8ff">🔵 Azul</option>
+          <option value="#ff9547">🟠 Naranja</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:16px"><label>Banco / Emisor</label><input type="text" id="ac-bank" placeholder="Ej: Banco Pichincha, Diners Club…"></div>
+    <input type="hidden" id="ac-edit-id">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" id="btnSaveAccount" style="flex:1;padding:12px">Guardar</button>
+      <button class="btn-delete-txn" id="ac-delete-btn" style="display:none;padding:12px">🗑 Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--overlay-bg);backdrop-filter:blur(12px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:320px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🔒</div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Acceso a flujo</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Ingresa tus credenciales para continuar</div>
+    <input id="loginUser" type="text" autocomplete="username" maxlength="80"
+      style="width:100%;padding:13px 14px;font-size:15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;box-sizing:border-box;margin-bottom:10px"
+      placeholder="Usuario">
+    <input id="loginPass" type="password" autocomplete="current-password" maxlength="200"
+      style="width:100%;padding:13px 14px;font-size:15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;box-sizing:border-box"
+      placeholder="Contraseña">
+    <div id="loginError" style="color:var(--red);font-size:12px;min-height:20px;margin:10px 0"></div>
+    <button id="loginSubmit" style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer">
+      Entrar →
+    </button>
+  </div>
+</div>
+
+<!-- SETUP OVERLAY — shown on first run, creates the admin account -->
+<div id="setupOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--overlay-bg);backdrop-filter:blur(12px);align-items:center;justify-content:center">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px 36px;width:340px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">🛠️</div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px">Primera configuración</div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:24px">Copia el token de setup desde los logs del servidor y crea tu cuenta administrador</div>
+    <input id="setupToken" type="text" autocomplete="off" maxlength="100" spellcheck="false"
+      style="width:100%;padding:13px 14px;font-size:13px;font-family:'DM Mono',monospace;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;box-sizing:border-box;margin-bottom:10px"
+      placeholder="Token de setup (desde los logs)">
+    <input id="setupUser" type="text" autocomplete="username" maxlength="80"
+      style="width:100%;padding:13px 14px;font-size:15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;box-sizing:border-box;margin-bottom:10px"
+      placeholder="Nombre de usuario">
+    <input id="setupPass" type="password" autocomplete="new-password" maxlength="200"
+      style="width:100%;padding:13px 14px;font-size:15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;box-sizing:border-box"
+      placeholder="Contraseña">
+    <div id="setupError" style="color:var(--red);font-size:12px;min-height:20px;margin:10px 0"></div>
+    <button id="setupSubmit" style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer">
+      Crear cuenta →
+    </button>
+  </div>
+</div>
+
+<!-- INIT OVERLAY — covers the page until the app is fully initialized (prevents admin from seeing financial views during startup) -->
+<div id="initOverlay" style="position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center;transition:opacity .2s">
+  <div style="color:var(--text3);font-size:13px">Cargando…</div>
+</div>
+
+<!-- SYNC BADGE — shows briefly when data syncs from another device -->
+<div id="syncBadge" style="position:fixed;bottom:80px;right:20px;z-index:300;background:var(--surface);border:1px solid var(--green);border-radius:20px;padding:8px 14px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:6px;opacity:0;transition:opacity .4s;pointer-events:none">
+  <div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1s infinite"></div>
+  Sincronizado
+</div>
+
+
+<!-- Safety net: hide loading overlay even if JS modules fail to load -->
+<script>
+  setTimeout(function() {
+    var o = document.getElementById('initOverlay');
+    if (o) o.style.display = 'none';
+  }, 8000);
+</script>
+
+<!-- Single ES module entry point — browser resolves all imports automatically -->
+<script type="module" src="js/app.js?v=12"></script>
+</body>
+</html>
