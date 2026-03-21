@@ -11,8 +11,13 @@
 import { scryptSync, randomBytes, timingSafeEqual } from 'crypto';
 import { users } from './db.js';
 import {
-  initSessions, SESSION_TTL,
-  sessionGet, sessionTouch, sessionCreate, sessionDelete, sessionDeleteUser,
+  initSessions,
+  SESSION_TTL,
+  sessionGet,
+  sessionTouch,
+  sessionCreate,
+  sessionDelete,
+  sessionDeleteUser,
 } from './sessions.js';
 
 // ── Setup token (one-time, in-memory) ─────────────────────
@@ -52,7 +57,7 @@ export function hashPassword(password) {
 export function verifyPassword(password, stored) {
   const [salt, storedHash] = stored.split(':');
   const storedBuf = Buffer.from(storedHash, 'hex');
-  const attempt   = scryptSync(password, salt, KEY_LEN, SCRYPT_PARAMS);
+  const attempt = scryptSync(password, salt, KEY_LEN, SCRYPT_PARAMS);
   return storedBuf.length === attempt.length && timingSafeEqual(storedBuf, attempt);
 }
 
@@ -70,10 +75,12 @@ export function setup(token, username, password) {
     const b = Buffer.alloc(a.length);
     Buffer.from(token ?? '', 'utf8').copy(b);
     if (!timingSafeEqual(a, b)) return null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
   if (!username || !password) return null;
 
-  const hash    = hashPassword(password);
+  const hash = hashPassword(password);
   const newUser = users.create(username.trim(), hash, 'admin');
   setupToken = null; // invalidate — setup can only happen once per run
 
@@ -93,7 +100,10 @@ export function validateToken(token) {
   if (!token) return null;
   const row = sessionGet(token);
   if (!row) return null;
-  if (row.expires_at < Date.now()) { sessionDelete(token); return null; }
+  if (row.expires_at < Date.now()) {
+    sessionDelete(token);
+    return null;
+  }
   sessionTouch(token, Date.now() + SESSION_TTL); // sliding window
   return row.user_id;
 }

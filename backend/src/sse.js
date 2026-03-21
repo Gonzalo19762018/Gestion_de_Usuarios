@@ -20,8 +20,11 @@ export function broadcast(event, data = {}, username) {
   const payload = `event: ${event}\ndata: ${JSON.stringify({ ...data, ts: Date.now() })}\n\n`;
   for (const [res, owner] of clients) {
     if (owner !== username) continue;
-    try { res.write(payload); }
-    catch { clients.delete(res); }
+    try {
+      res.write(payload);
+    } catch {
+      clients.delete(res);
+    }
   }
 }
 
@@ -29,7 +32,10 @@ export function broadcast(event, data = {}, username) {
 setInterval(() => {
   const ping = `: ping\n\n`;
   for (const res of clients) {
-    try { res.write(ping); }
-    catch { clients.delete(res); }
+    try {
+      res.write(ping);
+    } catch {
+      clients.delete(res);
+    }
   }
 }, 25_000);

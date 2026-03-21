@@ -63,7 +63,13 @@ describe('validateMonthBody', () => {
   });
 
   test('accepts budgets with object values', () => {
-    assert.equal(validateMonthBody({ ...valid, budgets: { Vivienda: { limit: 5000 }, Alimentación: { limit: 3000 } } }), null);
+    assert.equal(
+      validateMonthBody({
+        ...valid,
+        budgets: { Vivienda: { limit: 5000 }, Alimentación: { limit: 3000 } },
+      }),
+      null
+    );
   });
 
   test('accepts budgets with undefined limit', () => {
@@ -122,8 +128,13 @@ describe('validateImportMonth', () => {
 // ── validateImportDeferral ────────────────────────────────────────────────────
 describe('validateImportDeferral', () => {
   const validDeferral = {
-    id: 1, name: 'Laptop', amount: 12000, cuotas: 12,
-    originYear: 2024, originMonth: 0, date: '2024-01-15',
+    id: 1,
+    name: 'Laptop',
+    amount: 12000,
+    cuotas: 12,
+    originYear: 2024,
+    originMonth: 0,
+    date: '2024-01-15',
   };
 
   test('accepts a valid deferral object', () => {
@@ -144,7 +155,13 @@ describe('validateImportDeferral', () => {
   });
 
   test('accepts valid known category', () => {
-    assert.equal(validateImportDeferral({ ...validDeferral, cat: 'Electrónica' === 'Electrónica' ? 'Educación' : 'Educación' }, 0), null);
+    assert.equal(
+      validateImportDeferral(
+        { ...validDeferral, cat: 'Electrónica' === 'Electrónica' ? 'Educación' : 'Educación' },
+        0
+      ),
+      null
+    );
   });
 
   test('error message includes array index', () => {

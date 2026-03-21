@@ -6,7 +6,7 @@
 
 import { getDb } from './db.js';
 
-export const SESSION_TTL           = 24 * 60 * 60 * 1000; // 24 h sliding window
+export const SESSION_TTL = 24 * 60 * 60 * 1000; // 24 h sliding window
 export const MAX_SESSIONS_PER_USER = 5;
 
 // ── Schema ─────────────────────────────────────────────────
@@ -33,23 +33,23 @@ export function initSessions() {
 function _purgeExpired() {
   try {
     getDb().prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
-  } catch { /* db may not be initialised during unit tests */ }
+  } catch {
+    /* db may not be initialised during unit tests */
+  }
 }
 
 // ── CRUD ───────────────────────────────────────────────────
 
 /** Returns { user_id, expires_at } or null. Does NOT extend the TTL. */
 export function sessionGet(token) {
-  return getDb()
-    .prepare('SELECT user_id, expires_at FROM sessions WHERE token=?')
-    .get(token) || null;
+  return (
+    getDb().prepare('SELECT user_id, expires_at FROM sessions WHERE token=?').get(token) || null
+  );
 }
 
 /** Slide the expiry window forward. */
 export function sessionTouch(token, newExpiry) {
-  getDb()
-    .prepare('UPDATE sessions SET expires_at=? WHERE token=?')
-    .run(newExpiry, token);
+  getDb().prepare('UPDATE sessions SET expires_at=? WHERE token=?').run(newExpiry, token);
 }
 
 /**
@@ -65,7 +65,11 @@ export function sessionCreate(token, userId, expiresAt) {
       .get(userId);
     if (oldest) db.prepare('DELETE FROM sessions WHERE token=?').run(oldest.token);
   }
-  db.prepare('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)').run(token, userId, expiresAt);
+  db.prepare('INSERT INTO sessions(token,user_id,expires_at) VALUES(?,?,?)').run(
+    token,
+    userId,
+    expiresAt
+  );
 }
 
 /** Remove one token (logout). */

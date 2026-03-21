@@ -1,10 +1,10 @@
 // src/db.js
 import Database from 'better-sqlite3';
-import path     from 'path';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH   = process.env.DB_PATH || path.join(__dirname, '../data/flujo.db');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../data/flujo.db');
 
 let db;
 export const getDb = () => db;
@@ -68,8 +68,8 @@ export function initDb() {
   `);
 
   // Run migrations in order — each is idempotent
-  _migrateIfNeeded();        // adds user_id column to pre-existing single-user tables
-  _addFkConstraints();       // adds FOREIGN KEY + ON DELETE CASCADE (DB-3)
+  _migrateIfNeeded(); // adds user_id column to pre-existing single-user tables
+  _addFkConstraints(); // adds FOREIGN KEY + ON DELETE CASCADE (DB-3)
   _migrateToNumericUserId(); // converts user_id TEXT(username) → INTEGER(id) (DB-1)
 
   console.log(`[db] ${DB_PATH}`);
@@ -78,9 +78,9 @@ export function initDb() {
 
 // ── MIGRATION 1: add user_id to pre-existing single-user tables ─────────────
 function _migrateIfNeeded() {
-  const monthsCols = db.prepare("PRAGMA table_info(months)").all();
+  const monthsCols = db.prepare('PRAGMA table_info(months)').all();
   if (monthsCols.length === 0) return; // fresh install — tables just created above
-  if (monthsCols.some(c => c.name === 'user_id')) return; // already migrated
+  if (monthsCols.some((c) => c.name === 'user_id')) return; // already migrated
 
   console.log('[db] migrating to multi-user schema…');
   db.exec(`
@@ -156,7 +156,7 @@ function _migrateIfNeeded() {
 // first (admin) user before rebuilding tables with proper FK constraints.
 function _addFkConstraints() {
   // Already done if months table has any FK defined
-  if (db.prepare("PRAGMA foreign_key_list(months)").all().length > 0) return;
+  if (db.prepare('PRAGMA foreign_key_list(months)').all().length > 0) return;
 
   // Reassign legacy '' user_id to the oldest user (admin) so FK won't reject them
   const hasLegacy = !!(
@@ -166,14 +166,14 @@ function _addFkConstraints() {
   );
 
   if (hasLegacy) {
-    const firstUser = db.prepare("SELECT username FROM users ORDER BY id LIMIT 1").get();
+    const firstUser = db.prepare('SELECT username FROM users ORDER BY id LIMIT 1').get();
     if (!firstUser) {
       // Edge case: legacy data but no users yet — skip to avoid data loss
       console.warn('[db] FK migration skipped: unowned data exists but no users found');
       return;
     }
     console.log(`[db] reassigning legacy data to user "${firstUser.username}"…`);
-    ['months', 'deferrals', 'accounts'].forEach(t =>
+    ['months', 'deferrals', 'accounts'].forEach((t) =>
       db.prepare(`UPDATE ${t} SET user_id=? WHERE user_id=''`).run(firstUser.username)
     );
   }
@@ -247,7 +247,7 @@ function _addFkConstraints() {
 function _migrateToNumericUserId() {
   const cols = db.prepare('PRAGMA table_info(months)').all();
   if (!cols.length) return; // fresh install — CREATE TABLE already uses INTEGER
-  const uidCol = cols.find(c => c.name === 'user_id');
+  const uidCol = cols.find((c) => c.name === 'user_id');
   if (!uidCol || uidCol.type === 'INTEGER') return; // already migrated
 
   console.log('[db] migrating user_id to numeric INTEGER…');
@@ -328,23 +328,37 @@ function _migrateToNumericUserId() {
 
 // ── USERS ─────────────────────────────────────────────────
 export const users = {
-  count() { return db.prepare('SELECT COUNT(*) AS n FROM users').get().n; },
+  count() {
+    return db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+  },
   // Full row including password hash — only use for auth (login / password change)
-  getByUsername(u) { return db.prepare('SELECT * FROM users WHERE username=?').get(u) || null; },
-  getById(id)      { return db.prepare('SELECT * FROM users WHERE id=?').get(id) || null; },
+  getByUsername(u) {
+    return db.prepare('SELECT * FROM users WHERE username=?').get(u) || null;
+  },
+  getById(id) {
+    return db.prepare('SELECT * FROM users WHERE id=?').get(id) || null;
+  },
   // Safe projection — never includes the password hash
   getByUsernamePublic(u) {
-    return db.prepare('SELECT id, username, role, created_at FROM users WHERE username=?').get(u) || null;
+    return (
+      db.prepare('SELECT id, username, role, created_at FROM users WHERE username=?').get(u) || null
+    );
   },
   getByIdPublic(id) {
-    return db.prepare('SELECT id, username, role, created_at FROM users WHERE id=?').get(id) || null;
+    return (
+      db.prepare('SELECT id, username, role, created_at FROM users WHERE id=?').get(id) || null
+    );
   },
   // Returns all users without the password hash
   getAll() {
     return db.prepare('SELECT id, username, role, created_at FROM users ORDER BY created_at').all();
   },
   create(username, passwordHash, role = 'user') {
-    db.prepare('INSERT INTO users(username,password,role) VALUES(?,?,?)').run(username, passwordHash, role);
+    db.prepare('INSERT INTO users(username,password,role) VALUES(?,?,?)').run(
+      username,
+      passwordHash,
+      role
+    );
     return this.getByUsername(username);
   },
   updatePassword(id, newHash) {
@@ -365,8 +379,10 @@ export const users = {
 // ── MONTHS ────────────────────────────────────────────────
 export const months = {
   getAll(userId) {
-    return db.prepare('SELECT * FROM months WHERE user_id=? ORDER BY year, month')
-      .all(userId).map(toMonth);
+    return db
+      .prepare('SELECT * FROM months WHERE user_id=? ORDER BY year, month')
+      .all(userId)
+      .map(toMonth);
   },
   get(userId, key) {
     const r = db.prepare('SELECT * FROM months WHERE user_id=? AND key=?').get(userId, key);
@@ -374,21 +390,26 @@ export const months = {
   },
   upsert(userId, md) {
     const inc = md.income || {};
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO months(user_id,key,year,month,income_amount,income_desc,include_rollover,rollover_applied,transactions,budgets,updated_at)
       VALUES(@uid,@key,@year,@month,@ia,@id,@ir,@ra,@tx,@bud,datetime('now'))
       ON CONFLICT(user_id,key) DO UPDATE SET
         income_amount=excluded.income_amount, income_desc=excluded.income_desc,
         include_rollover=excluded.include_rollover, rollover_applied=excluded.rollover_applied,
         transactions=excluded.transactions, budgets=excluded.budgets, updated_at=excluded.updated_at
-    `).run({
-      uid: userId, key: md.key, year: md.year, month: md.month,
-      ia:  inc.amount || 0,
-      id:  inc.desc   || 'Ingreso mensual',
-      ir:  inc.includeRollover ? 1 : 0,
-      ra:  md.rolloverApplied  || 0,
-      tx:  JSON.stringify(md.transactions || []),
-      bud: JSON.stringify(md.budgets      || {}),
+    `
+    ).run({
+      uid: userId,
+      key: md.key,
+      year: md.year,
+      month: md.month,
+      ia: inc.amount || 0,
+      id: inc.desc || 'Ingreso mensual',
+      ir: inc.includeRollover ? 1 : 0,
+      ra: md.rolloverApplied || 0,
+      tx: JSON.stringify(md.transactions || []),
+      bud: JSON.stringify(md.budgets || {}),
     });
     return this.get(userId, md.key);
   },
@@ -402,11 +423,25 @@ export const months = {
 function toMonth(r) {
   let transactions = [];
   let budgets = {};
-  try { transactions = JSON.parse(r.transactions || '[]'); } catch { /* use default */ }
-  try { budgets      = JSON.parse(r.budgets      || '{}'); } catch { /* use default */ }
+  try {
+    transactions = JSON.parse(r.transactions || '[]');
+  } catch {
+    /* use default */
+  }
+  try {
+    budgets = JSON.parse(r.budgets || '{}');
+  } catch {
+    /* use default */
+  }
   return {
-    key: r.key, year: r.year, month: r.month,
-    income: { amount: r.income_amount, desc: r.income_desc, includeRollover: r.include_rollover === 1 },
+    key: r.key,
+    year: r.year,
+    month: r.month,
+    income: {
+      amount: r.income_amount,
+      desc: r.income_desc,
+      includeRollover: r.include_rollover === 1,
+    },
     rolloverApplied: r.rollover_applied,
     transactions,
     budgets,
@@ -417,26 +452,36 @@ function toMonth(r) {
 // ── DEFERRALS ─────────────────────────────────────────────
 export const deferrals = {
   getAll(userId) {
-    return db.prepare('SELECT * FROM deferrals WHERE user_id=? ORDER BY origin_year,origin_month')
-      .all(userId).map(toDeferral);
+    return db
+      .prepare('SELECT * FROM deferrals WHERE user_id=? ORDER BY origin_year,origin_month')
+      .all(userId)
+      .map(toDeferral);
   },
   get(userId, id) {
     const r = db.prepare('SELECT * FROM deferrals WHERE user_id=? AND id=?').get(userId, id);
     return r ? toDeferral(r) : null;
   },
   upsert(userId, d) {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO deferrals(user_id,id,name,amount,cat,date,cuotas,account_id,origin_year,origin_month)
       VALUES(@uid,@id,@name,@amount,@cat,@date,@cuotas,@aid,@oy,@om)
       ON CONFLICT(user_id,id) DO UPDATE SET
         name=excluded.name, amount=excluded.amount, cat=excluded.cat, date=excluded.date,
         cuotas=excluded.cuotas, account_id=excluded.account_id,
         origin_year=excluded.origin_year, origin_month=excluded.origin_month
-    `).run({
-      uid: userId, id: d.id, name: d.name, amount: d.amount,
-      cat: d.cat || 'Otros', date: d.date,
-      cuotas: d.cuotas || 1, aid: d.accountId || null,
-      oy: d.originYear, om: d.originMonth,
+    `
+    ).run({
+      uid: userId,
+      id: d.id,
+      name: d.name,
+      amount: d.amount,
+      cat: d.cat || 'Otros',
+      date: d.date,
+      cuotas: d.cuotas || 1,
+      aid: d.accountId || null,
+      oy: d.originYear,
+      om: d.originMonth,
     });
     return this.get(userId, d.id);
   },
@@ -447,29 +492,46 @@ export const deferrals = {
 
 function toDeferral(r) {
   return {
-    id: r.id, name: r.name, amount: r.amount, cat: r.cat,
-    date: r.date, cuotas: r.cuotas, accountId: r.account_id,
-    originYear: r.origin_year, originMonth: r.origin_month,
+    id: r.id,
+    name: r.name,
+    amount: r.amount,
+    cat: r.cat,
+    date: r.date,
+    cuotas: r.cuotas,
+    accountId: r.account_id,
+    originYear: r.origin_year,
+    originMonth: r.origin_month,
   };
 }
 
 // ── ACCOUNTS ──────────────────────────────────────────────
 export const accounts = {
   getAll(userId) {
-    return db.prepare('SELECT * FROM accounts WHERE user_id=? ORDER BY created_at')
-      .all(userId).map(toAccount);
+    return db
+      .prepare('SELECT * FROM accounts WHERE user_id=? ORDER BY created_at')
+      .all(userId)
+      .map(toAccount);
   },
   get(userId, id) {
     const r = db.prepare('SELECT * FROM accounts WHERE user_id=? AND id=?').get(userId, id);
     return r ? toAccount(r) : null;
   },
   upsert(userId, a) {
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO accounts(user_id,id,name,type,color,bank)
       VALUES(@uid,@id,@name,@type,@color,@bank)
       ON CONFLICT(user_id,id) DO UPDATE SET
         name=excluded.name, type=excluded.type, color=excluded.color, bank=excluded.bank
-    `).run({ uid: userId, id: a.id, name: a.name, type: a.type, color: a.color, bank: a.bank || '' });
+    `
+    ).run({
+      uid: userId,
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      color: a.color,
+      bank: a.bank || '',
+    });
     return this.get(userId, a.id);
   },
   delete(userId, id) {

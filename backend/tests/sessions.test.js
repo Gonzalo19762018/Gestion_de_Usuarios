@@ -22,13 +22,13 @@ before(() => {
   initSessions();
   // Insert test users (FK constraint: sessions.user_id → users.id)
   getDb()
-    .prepare("INSERT OR IGNORE INTO users(username,password,role) VALUES(?,?,?)")
+    .prepare('INSERT OR IGNORE INTO users(username,password,role) VALUES(?,?,?)')
     .run('alice', 'salt:hash', 'user');
   getDb()
-    .prepare("INSERT OR IGNORE INTO users(username,password,role) VALUES(?,?,?)")
+    .prepare('INSERT OR IGNORE INTO users(username,password,role) VALUES(?,?,?)')
     .run('bob', 'salt:hash', 'user');
   aliceId = getDb().prepare("SELECT id FROM users WHERE username='alice'").get().id;
-  bobId   = getDb().prepare("SELECT id FROM users WHERE username='bob'").get().id;
+  bobId = getDb().prepare("SELECT id FROM users WHERE username='bob'").get().id;
 });
 
 after(() => {
@@ -38,7 +38,9 @@ after(() => {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 let _tokCounter = 0;
-function freshToken() { return `tok_${++_tokCounter}_${Date.now()}`; }
+function freshToken() {
+  return `tok_${++_tokCounter}_${Date.now()}`;
+}
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 describe('sessionCreate / sessionGet', () => {
@@ -85,13 +87,13 @@ describe('sessionDeleteUser', () => {
     const t3 = freshToken();
     sessionCreate(t1, aliceId, Date.now() + SESSION_TTL);
     sessionCreate(t2, aliceId, Date.now() + SESSION_TTL);
-    sessionCreate(t3, bobId,   Date.now() + SESSION_TTL);
+    sessionCreate(t3, bobId, Date.now() + SESSION_TTL);
 
     sessionDeleteUser(aliceId);
 
     assert.equal(sessionGet(t1), null, 'alice token 1 should be gone');
     assert.equal(sessionGet(t2), null, 'alice token 2 should be gone');
-    assert.ok(sessionGet(t3),         'bob token should still exist');
+    assert.ok(sessionGet(t3), 'bob token should still exist');
   });
 });
 
@@ -108,7 +110,7 @@ describe('per-user session cap (MAX_SESSIONS_PER_USER = 5)', () => {
       sessionCreate(tok, aliceId, Date.now() + (i + 1) * 1000);
     }
     // All 5 should exist
-    tokens.forEach(tok => assert.ok(sessionGet(tok), `token ${tok} should exist`));
+    tokens.forEach((tok) => assert.ok(sessionGet(tok), `token ${tok} should exist`));
 
     // Add a 6th — must evict the one with the lowest expires_at (tokens[0])
     const tok6 = freshToken();
