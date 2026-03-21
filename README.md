@@ -1,3 +1,19 @@
+<div align="center">
+
+# flujo 💸
+
+**Dashboard financiero personal · Self-hosted · Open source**
+
+[![Dashboard](docs/screenshots/Dashboard mensual.png)
+[![Prespuesto?mensual](docs/screenshots/Presupuesto mensual.png)
+[![Presupuesto_movil](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docker.com)
+[![Gestion_Usuarios](docs/screenshots/Gestion de usuarios.png)
+
+App de control financiero personal construida desde cero.
+Corre en infraestructura propia, sin servicios de terceros para los datos.
+
+</div>
+
 ## ¿Por qué construí esto?
 
 Trabajo en finanzas y ciberseguridad. Ninguna app existente hacía exactamente lo que necesitaba, y tampoco quería que mis datos financieros vivieran en servidores de terceros.
