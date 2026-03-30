@@ -144,6 +144,20 @@ export function openAccountModal(id) {
   _openFocusTrap(overlay.querySelector('.modal'));
 }
 
+// Safety: ensure the button is enabled when name is present.
+// This is also useful if there is a race condition with initial binding.
+export function initAccountModalValidation() {
+  const nameInput = document.getElementById('ac-name');
+  const typeInput = document.getElementById('ac-type');
+  const colorInput = document.getElementById('ac-color');
+  const bankInput = document.getElementById('ac-bank');
+
+  [nameInput, typeInput, colorInput, bankInput].forEach(el => {
+    if (el) el.addEventListener('input', updateSaveAccountButton);
+  });
+}
+
+
 export function closeAccountModal() {
   document.getElementById('accountModalOverlay').classList.remove('open');
   _closeFocusTrap();
