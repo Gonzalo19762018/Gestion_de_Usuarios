@@ -9,7 +9,7 @@ import {
   openAddModal, closeModal, setModalType, modalAdd, confirmDeleteTxn,
   setBudgetYear_, setBudgetMonth_,
 } from './dashboard.js';
-import { populateAccountSelects, openAccountModal, closeAccountModal, saveAccount, deleteAccount } from './deferrals.js';
+import { populateAccountSelects, openAccountModal, closeAccountModal, saveAccount, deleteAccount, updateSaveAccountButton } from './deferrals.js';
 import { renderAccountHistory } from './accounts.js';
 import {
   renderBudgetView, openBudgetModal, closeBudgetModal, saveBudgetLimits, copyBudgetFromPrev,
@@ -134,6 +134,7 @@ function bindStaticHandlers() {
   document.getElementById('accountModalOverlay')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeAccountModal(); });
   document.getElementById('btnAccountModalClose')?.addEventListener('click', closeAccountModal);
   document.getElementById('btnSaveAccount')?.addEventListener('click', saveAccount);
+  document.getElementById('ac-name')?.addEventListener('input', updateSaveAccountButton);
   document.getElementById('ac-delete-btn')?.addEventListener('click', deleteAccount);
 
   // Month cards (dashboard grid + all-months grid)

@@ -48,6 +48,17 @@ export async function deleteDeferral(id) {
 export const ACCT_TYPE_LABELS = { debito:'Débito', credito:'Crédito', efectivo:'Efectivo', ahorro:'Ahorro' };
 export const ACCT_TYPE_ICONS  = { debito:'💳', credito:'💎', efectivo:'💵', ahorro:'🏦' };
 
+function isAccountFormValid() {
+  const name = document.getElementById('ac-name')?.value.trim();
+  return Boolean(name);
+}
+
+export function updateSaveAccountButton() {
+  const btn = document.getElementById('btnSaveAccount');
+  if (!btn) return;
+  btn.disabled = !isAccountFormValid();
+}
+
 export async function saveAccount(rec) {
   if (!rec) {
     const name  = document.getElementById('ac-name').value.trim();
@@ -128,6 +139,7 @@ export function openAccountModal(id) {
       delBtn.style.display = 'block';
     }
   }
+  updateSaveAccountButton();
   overlay.classList.add('open');
   _openFocusTrap(overlay.querySelector('.modal'));
 }
