@@ -263,12 +263,16 @@ async function init() {
     setBudgetYear_(THIS_YEAR); setBudgetMonth_(THIS_MONTH);
     setDashYear_(THIS_YEAR);
 
+    // Show dashboard for all users (including admin), while admin keeps access to user management.
+    showView('dashboard');
+    renderSidebarMonths();
+    populateAccountSelects();
+
     if (CURRENT_ROLE === 'admin') {
-      showView('usuarios');
-    } else {
-      showView('dashboard');
-      renderSidebarMonths();
-      populateAccountSelects();
+      const adminNav = document.getElementById('adminNav');
+      if (adminNav) adminNav.style.display = 'block';
+      const bnUsuarios = document.getElementById('bn-usuarios');
+      if (bnUsuarios) bnUsuarios.style.display = 'flex';
     }
   } finally {
     const overlay = document.getElementById('initOverlay');

@@ -287,9 +287,11 @@ export async function fetchCurrentUser() {
       if (adminNav) adminNav.style.display = 'block';
       const bnUsuarios = document.getElementById('bn-usuarios');
       if (bnUsuarios) bnUsuarios.style.display = 'flex';
+      // Admin keeps full access to financial functionality too;
+      // just expose the admin menu without hiding the dashboard controls.
       ['financialNav', 'quickAccessNav', 'monthNavBtn', 'bottomNav'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
+        if (el) el.style.display = '';
       });
     }
   } catch {}
