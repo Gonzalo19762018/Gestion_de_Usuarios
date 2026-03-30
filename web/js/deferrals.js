@@ -67,7 +67,12 @@ export async function saveAccount(rec) {
     const bank  = document.getElementById('ac-bank').value.trim();
     const editId= document.getElementById('ac-edit-id').value;
     if (!name) { toast('⚠️ Escribe un nombre'); return; }
-    rec = { id: editId ? parseInt(editId) : genId(), name, type, color, bank };
+    const id = editId ? parseInt(editId, 10) : genId();
+    rec = { id, name, type, color, bank };
+  }
+
+  if (!rec.id) {
+    rec.id = genId();
   }
 
   setAllAccounts(allAccounts.filter(a => a.id !== rec.id).concat(rec));

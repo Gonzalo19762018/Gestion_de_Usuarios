@@ -16,6 +16,10 @@ export async function dbPutDeferral(rec) {
   else         await idbPut('deferrals', rec);
 }
 export async function dbPutAccount(rec) {
+  if (!rec || rec.id === undefined || rec.id === null) {
+    console.warn('dbPutAccount: id missing, generating a new one', rec);
+    rec = { ...rec, id: genId() };
+  }
   if (USE_API) await apiPut(`/accounts/${rec.id}`, rec);
   else         await idbPut('accounts', rec);
 }
