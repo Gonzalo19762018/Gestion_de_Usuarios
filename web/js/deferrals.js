@@ -1,5 +1,5 @@
 import { CAT_COLORS, CAT_ICONS, esc, genId, showConfirm, _openFocusTrap, _closeFocusTrap, toast } from './config.js';
-import { allDeferrals, allAccounts, setAllDeferrals, setAllAccounts, dbPutDeferral, dbDeleteDeferral, dbPutAccount, dbDeleteAccount } from './db.js';
+import { allDeferrals, allAccounts, setAllDeferrals, setAllAccounts, dbPutDeferral, dbDeleteDeferral, dbPutAccount, dbDeleteAccount, loadAll } from './db.js';
 
 // ── DEFERRAL MODEL ──
 // A deferral record:
@@ -69,8 +69,17 @@ export async function saveAccount(rec) {
     if (!name) { toast('⚠️ Escribe un nombre'); return; }
     rec = { id: editId ? parseInt(editId) : genId(), name, type, color, bank };
   }
+
   setAllAccounts(allAccounts.filter(a => a.id !== rec.id).concat(rec));
-  await dbPutAccount(rec);
+  try {
+    await dbPutAccount(rec);
+    await loadAll();
+  } catch (err) {
+    console.error('Error guardando cuenta:', err);
+    toast('❌ No se pudo guardar la cuenta. Intenta otra vez.');
+    return;
+  }
+
   closeAccountModal();
   populateAccountSelects();
   const { renderAccountsView } = await import('./accounts.js');
